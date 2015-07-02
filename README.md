@@ -1,2 +1,2 @@
 # NM-Training
-Network Marvels Training Repository
+NM Training Repository
