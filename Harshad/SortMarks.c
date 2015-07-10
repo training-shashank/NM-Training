@@ -56,7 +56,7 @@ char *err_msg;
 /**************************** Function Declarations ***************************/
 int FileCheck(FILE *);
 int ValidateParam(char *,char *);
-void CreateList(char *, int);
+int CreateList(char *, int, StudListType *);
 void SortList(int);
 void PrintList();
 /******************************************************************************/
@@ -123,7 +123,7 @@ int main(int argc, char* argv[]){
                     printf("Variables read: %s %s\n", name, marks);
                         
                     if ( ValidateParam(name, marks) ){
-                        if ( CreateList(name, atoi(marks)) )
+                        if ( CreateList(name, atoi(marks), head) )
                             count++;        // node inserted successfully
                     }
                     else{
@@ -266,6 +266,7 @@ int CreateList(char *name, int marks, StudListType *f_head){
                     
     node = (StudListType *) malloc(sizeof (StudListType));
     node->name = (char *) malloc(strlen(name));
+    
     strcpy(node->name, name);
     node->marks = marks;
     node->nxtStudPtr = NULL;
@@ -280,7 +281,7 @@ int CreateList(char *name, int marks, StudListType *f_head){
                 node->nxtStudPtr = current;
                 
                 if ( current == f_head ){
-                    f_head = node;
+                    head = node;
                     return 1;
                 }
                 else{
@@ -332,7 +333,7 @@ void SortList(int count){
                     prev_node->marks, (void *) node->nxtStudPtr);
             printf("node: %s %d %s %p\n",node->name,
                     node->marks, (void *) node->nxtStudPtr);
-            */
+            
 
             while(temp != NULL){
                 if ( node->marks < temp->marks ){
@@ -379,17 +380,17 @@ void PrintList(){
     /* printing sorted linked list */
     printf("Printing linked list\n");
     
-    printf("\nHow many toppers you want to see:\n");
-    scanf("%d", &limit);
+    //printf("\nHow many toppers you want to see:\n");
+    //scanf("%d", &limit);
 
     prev_node = head;
 
-    printf("Name\n");
-    printf("----\n");
+    printf("Name\t\tMarks\n");
+    printf("----\t\t-----\n");
     
-    while ( prev_node != NULL && i <= limit ){
+    while ( prev_node != NULL ){
 
-        printf("%s",prev_node->name);
+        printf("%s\t\t%d",prev_node->name, prev_node->marks);
         printf("\n");
         temp = prev_node;
         prev_node = prev_node->nxtStudPtr;
