@@ -53,7 +53,6 @@ typedef struct StudListType StudListType;
 char *err_msg;
 /******************************************************************************/
 
-
 /**************************** Function Declarations ***************************/
 int FileCheck(FILE *);
 int ValidateParam(char *,char *);
@@ -124,8 +123,8 @@ int main(int argc, char* argv[]){
                     printf("Variables read: %s %s\n", name, marks);
                         
                     if ( ValidateParam(name, marks) ){
-                        CreateList(name, atoi(marks));
-                        count++;
+                        if ( CreateList(name, atoi(marks)) )
+                            count++;        // node inserted successfully
                     }
                     else{
                         printf("\n%s\n", err_msg);
@@ -157,7 +156,7 @@ int main(int argc, char* argv[]){
                 printf("Count: %d\n", count);
 
                 /* Sorting linked list */
-                SortList(count);
+                //SortList(count);
 
             }// end of if
             else{
@@ -260,25 +259,50 @@ int ValidateParam(char *name, char *marks){
  ******************************************************************************/
 
 /******************************************************************************/
-void CreateList(char *name, int marks){
+int CreateList(char *name, int marks, StudListType *f_head){
 /******************************************************************************/
 
-    StudListType *node;
+    StudListType *node, *prev, *current;
                     
     node = (StudListType *) malloc(sizeof (StudListType));
     node->name = (char *) malloc(strlen(name));
     strcpy(node->name, name);
     node->marks = marks;
-                    
-    if ( head == NULL ){
-        head = node;
-        prev_node = head;
+    node->nxtStudPtr = NULL;
+
+    if ( f_head != NULL ){
+        prev = f_head;
+        current = prev;
+        while ( current != NULL ){
+
+            if ( current->marks < node->marks ){
+                
+                node->nxtStudPtr = current;
+                
+                if ( current == f_head ){
+                    f_head = node;
+                    return 1;
+                }
+                else{
+                    prev->nxtStudPtr = node;
+                    return 1;
+                }
+            }
+            else{
+                prev = current;
+                current = current->nxtStudPtr;
+            }
+        }
+        if ( current == NULL ){
+            prev->nxtStudPtr = node;
+            return 1;
+        }
     }
     else{
-        prev_node->nxtStudPtr = node;
+        head = node;
+        return 1;
     }
-    node->nxtStudPtr = NULL;
-    prev_node = node;
+    return 0;
 }
 
 /*******************************************************************************
@@ -286,11 +310,11 @@ void CreateList(char *name, int marks){
  * Working: Sorts the linked list of type SstudListType structure according to
  * the marks.
  * Input: Count of records in file.
- ******************************************************************************/
+ ******************************************************************************
 
-/******************************************************************************/
+/******************************************************************************
 void SortList(int count){
-/******************************************************************************/
+/******************************************************************************
 
     int i;
     if ( head != NULL){
@@ -338,6 +362,7 @@ void SortList(int count){
         }// end of for
     }//end of if
 }
+*/
 
 /*******************************************************************************
  * Function: PrintList()
