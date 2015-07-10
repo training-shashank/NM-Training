@@ -74,7 +74,7 @@ int main(int argc, char* argv[]){
     if (argc == 2){
         // if the argument is to print help for the program
         if (strcmp(argv[1], "--help") == 0){
-            file_ptr = fopen("SORTMARKS_README.txt", "r"); //read from file
+            file_ptr = fopen("../text-files/SORTMARKS_README.txt", "r"); //read from file
          
             /* Check whether file is empty or not */
             if ( !FileCheck(file_ptr) ){
@@ -96,7 +96,14 @@ int main(int argc, char* argv[]){
             }
             fclose(file_ptr);
         }
-        return 1;
+        else{
+            printf("Please provide valid options\n");
+            if ( UpdateLog(log_ptr, "Debug", "Please provide valid options") )
+                	printf("\n%s\n", err_msg);
+            else
+            	printf("\n%s\n", err_msg);               	
+            exit(0);
+        }
     }
 
     if (argc == 3){
@@ -156,8 +163,21 @@ int main(int argc, char* argv[]){
                 	exit(0);
                 }
             }
-        }// end of else
+        }// end of if
+        else{
+        	printf("\n%s not a valid option\n", argv[1]);
+        	strcpy(argv[1], "not a valid option");
+        	if ( UpdateLog(log_ptr, "Debug",  argv[1]) )
+                printf("\n%s\n", err_msg);
+            else
+            	printf("\n%s\n", err_msg);  
+        	exit(0);
+        }
     }// end of if
+	else{
+		printf("Valid arguments not provided. Type '--help' option to see help\n");
+		exit(0);
+	}
     
     if ( !PrintList(head) )
     	printf("\n%s\n", err_msg);
