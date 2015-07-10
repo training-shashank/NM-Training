@@ -58,7 +58,7 @@ int FileCheck(FILE *);
 int ValidateParam(char *,char *);
 int CreateList(char *, int, StudListType *);
 void SortList(int);
-void PrintList(StudListType *);
+int PrintList(StudListType *);
 int UpdateLog(FILE *, char *, char *);
 /******************************************************************************/
 
@@ -86,11 +86,11 @@ int main(int argc, char* argv[]){
             else{
                 /* Putting in the log */
                 if ( UpdateLog(log_ptr, "Error", err_msg) ){
-                	printf("%s", err_msg);
+                	printf("\n%s\n", err_msg);
                 	exit(0);
                 }
                 else{
-                	printf("%s", err_msg);
+                	printf("\n%s\n", err_msg);
                 	exit(0);
                 }
             }
@@ -128,11 +128,11 @@ int main(int argc, char* argv[]){
                     else{
                         /* Putting in the log */
                 		if ( UpdateLog(log_ptr, "Error", err_msg) ){
-		                	printf("%s", err_msg);
+		                	printf("\n%s\n", err_msg);
 		                	exit(0);
 		                }
 		                else{
-		                	printf("%s", err_msg);
+		                	printf("\n%s\n", err_msg);
 		                	exit(0);
 		                }
                     }
@@ -148,18 +148,19 @@ int main(int argc, char* argv[]){
             else{
                 /* Putting in the log */
                 if ( UpdateLog(log_ptr, "Error", err_msg) ){
-                	printf("%s", err_msg);
+                	printf("\n%s\n", err_msg);
                 	exit(0);
                 }
                 else{
-                	printf("%s", err_msg);
+                	printf("\n%s\n", err_msg);
                 	exit(0);
                 }
             }
         }// end of else
     }// end of if
     
-    PrintList(head);    
+    if ( !PrintList(head) )
+    	printf("\n%s\n", err_msg);
     free(err_msg);
     fclose(log_ptr);
     return 0;
@@ -185,7 +186,7 @@ int FileCheck(FILE *file_ptr){
 /******************************************************************************/
 
     if ( file_ptr == NULL){
-        strcpy(err_msg, "\nFile doesn't exists\n");
+        strcpy(err_msg, "File doesn't exists");
         return 1;
     }
     else{    
@@ -297,31 +298,39 @@ int CreateList(char *name, int marks, StudListType *f_head){
  ******************************************************************************/
  
 /******************************************************************************/
-void PrintList(StudListType *f_head){
+int PrintList(StudListType *f_head){
 /******************************************************************************/
 
     int limit, i = 1;
     StudListType *prev, *temp;
     
     /* printing sorted linked list */
-    printf("Printing linked list\n");
+    if ( f_head != NULL ){
     
-    printf("\nHow many toppers you want to see:\n");
-    scanf("%d", &limit);
-
-    prev = f_head;
-
-    printf("Name\t\tMarks\n");
-    printf("----\t\t-----\n");
-    
-    while ( prev != NULL && i <=limit){
-
-        printf("%s\t\t%d", prev->name, prev->marks);
-        printf("\n");
-        temp = prev;
-        prev = prev->nxtStudPtr;
-        i++;
-    }
+	    printf("Printing linked list\n");
+	    
+	    printf("\nHow many toppers you want to see:\n");
+	    scanf("%d", &limit);
+	
+	    prev = f_head;
+	
+	    printf("Name\t\tMarks\n");
+	    printf("----\t\t-----\n");
+	    
+	    while ( prev != NULL && i <=limit){
+	
+	        printf("%s\t\t%d", prev->name, prev->marks);
+	        printf("\n");
+	        temp = prev;
+	        prev = prev->nxtStudPtr;
+	        i++;
+	    }
+	    return 1;
+	}
+	else{
+		strcpy(err_msg, "List is empty");
+		return 0;
+	}
 }
 
 /*******************************************************************************
@@ -346,12 +355,13 @@ int UpdateLog(FILE *log, char *log_type, char *msg){
 	    fputs(log_type, log);
 	    fputs("\t", log);
 	    fputs(msg, log);
+	    fputs("\n", log);
 	    
-		strcpy(err_msg, "Log updated\n");
+		strcpy(err_msg, "Log updated");
 		return 1;
 	}
 	else{
-		strcpy(err_msg, "\nLog file not found\n");
+		strcpy(err_msg, "Log file not found");
 		return 0;
 	}
 }
