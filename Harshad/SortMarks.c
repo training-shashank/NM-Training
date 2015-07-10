@@ -59,7 +59,7 @@ int ValidateParam(char *,char *);
 int CreateList(char *, int, StudListType *);
 void SortList(int);
 void PrintList(StudListType *);
-int UpdateLog(FILE *, char *, char *)
+int UpdateLog(FILE *, char *, char *);
 /******************************************************************************/
 
 int main(int argc, char* argv[]){
@@ -67,7 +67,6 @@ int main(int argc, char* argv[]){
     FILE *file_ptr, *log_ptr;   // pointers to file & log respectively.
     char ch;                    // character to be read from file.
     int i;
-    char buff[20];              // temporary buffer to store date
 
     err_msg = (char *) malloc(MAX_SIZE);
     log_ptr = fopen("SORT_MARKS_LOG.txt", "a");
@@ -335,6 +334,7 @@ void PrintList(StudListType *f_head){
 int UpdateLog(FILE *log, char *log_type, char *msg){
 /******************************************************************************/
 
+    char buff[20];              // temporary buffer to store date
 	if(log != NULL){
 	    //printf("Entering into log\n");
 	    time_t now = time(NULL);
