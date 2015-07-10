@@ -58,7 +58,8 @@ int FileCheck(FILE *);
 int ValidateParam(char *,char *);
 int CreateList(char *, int, StudListType *);
 void SortList(int);
-void PrintList();
+void PrintList(StudListType *);
+int UpdateLog(FILE *, char *, char *)
 /******************************************************************************/
 
 int main(int argc, char* argv[]){
@@ -85,15 +86,14 @@ int main(int argc, char* argv[]){
             }
             else{
                 /* Putting in the log */
-                time_t now = time(NULL);
-                strftime(buff, 20, "%Y-%m-%d %H:%M:%S", localtime(&now));
-                printf("\n%s\n", err_msg);
-                fputs(buff, log_ptr);
-                fputs("\t", log_ptr);
-                fputs("Error", log_ptr);
-                fputs("\t", log_ptr);
-                fputs(err_msg, log_ptr);
-                exit(0);
+                if ( UpdateLog(log_ptr, "Error", err_msg) ){
+                	printf("%s", err_msg);
+                	exit(0);
+                }
+                else{
+                	printf("%s", err_msg);
+                	exit(0);
+                }
             }
             fclose(file_ptr);
         }
@@ -127,28 +127,15 @@ int main(int argc, char* argv[]){
                             count++;        // node inserted successfully
                     }
                     else{
-                        printf("\n%s\n", err_msg);
-                        //printf("Entering into log\n");
-                        //printf("%s",log_ptr);
-                        
-                        if(log_ptr != NULL){
-                            //printf("Entering into log\n");
-                            time_t now = time(NULL);
-                            printf("debug 2\n");
-                            //strftime(buff, 20, "%Y-%m-%d %H:%M:%S", localtime(&now));
-                            //printf("\n%s\n", err_msg);
-                            printf("debug 3\n");
-                            fputs(buff, log_ptr);
-                            fputs("\t", log_ptr);
-                            printf("debug 4\n");
-                            fputs("Error", log_ptr);
-                            printf("debug 5\n");
-                            fputs("\t", log_ptr);
-                            printf("debug 6\n");
-                            fputs(err_msg, log_ptr);
-                            printf("Log updated\n");
-                            }
-                        exit(0);
+                        /* Putting in the log */
+                		if ( UpdateLog(log_ptr, "Error", err_msg) ){
+		                	printf("%s", err_msg);
+		                	exit(0);
+		                }
+		                else{
+		                	printf("%s", err_msg);
+		                	exit(0);
+		                }
                     }
                 }
                 free(name);
@@ -160,21 +147,20 @@ int main(int argc, char* argv[]){
 
             }// end of if
             else{
-                printf("\n%s\n", err_msg);
-                time_t now = time(NULL);
-                strftime(buff, 20, "%Y-%m-%d %H:%M:%S", localtime(&now));
-                printf("\n%s\n", err_msg);
-                fputs(buff, log_ptr);
-                fputs("\t", log_ptr);
-                fputs("Error", log_ptr);
-                fputs("\t", log_ptr);
-                fputs(err_msg, log_ptr);
-                exit(0);
+                /* Putting in the log */
+                if ( UpdateLog(log_ptr, "Error", err_msg) ){
+                	printf("%s", err_msg);
+                	exit(0);
+                }
+                else{
+                	printf("%s", err_msg);
+                	exit(0);
+                }
             }
         }// end of else
     }// end of if
     
-    PrintList();    
+    PrintList(head);    
     free(err_msg);
     fclose(log_ptr);
     return 0;
@@ -307,97 +293,67 @@ int CreateList(char *name, int marks, StudListType *f_head){
 }
 
 /*******************************************************************************
- * Function: SortList()
- * Working: Sorts the linked list of type SstudListType structure according to
- * the marks.
- * Input: Count of records in file.
- ******************************************************************************
-
-/******************************************************************************
-void SortList(int count){
-/******************************************************************************
-
-    int i;
-    if ( head != NULL){
-        printf("Sorting linked list\n");
-        StudListType *node, *temp;
-   
-        for( i = 0; i < count; i++){
-    
-            prev_node = head;
-            node = prev_node;
-            temp = node->nxtStudPtr;
-
-            /*
-            printf("Prev node: %s %d %p\n",prev_node->name, 
-                    prev_node->marks, (void *) node->nxtStudPtr);
-            printf("node: %s %d %s %p\n",node->name,
-                    node->marks, (void *) node->nxtStudPtr);
-            
-
-            while(temp != NULL){
-                if ( node->marks < temp->marks ){
-                    if ( node == head ){
-                        //printf("Swapping start\n");
-                        node->nxtStudPtr = temp->nxtStudPtr;
-                        temp->nxtStudPtr = node;
-                        prev_node = temp;
-                        temp = node->nxtStudPtr;
-                        head = prev_node;
-                    }
-                    else{
-                        //printf("Swapping inbetween\n");
-                        prev_node->nxtStudPtr = temp;
-                        node->nxtStudPtr = temp->nxtStudPtr;
-                        temp->nxtStudPtr = node;
-                        prev_node = temp;
-                        temp = node->nxtStudPtr;
-                    }
-                }
-                else{
-                    prev_node = node;
-                    node = temp;
-                    temp = temp->nxtStudPtr;
-                }   
-            }// end of while
-        }// end of for
-    }//end of if
-}
-*/
-
-/*******************************************************************************
  * Function: PrintList()
  * Working: Prints the sorted linked list.
  ******************************************************************************/
  
 /******************************************************************************/
-void PrintList(){
+void PrintList(StudListType *f_head){
 /******************************************************************************/
 
     int limit, i = 1;
-    StudListType *temp;
+    StudListType *prev, *temp;
     
     /* printing sorted linked list */
     printf("Printing linked list\n");
     
-    //printf("\nHow many toppers you want to see:\n");
-    //scanf("%d", &limit);
+    printf("\nHow many toppers you want to see:\n");
+    scanf("%d", &limit);
 
-    prev_node = head;
+    prev = f_head;
 
     printf("Name\t\tMarks\n");
     printf("----\t\t-----\n");
     
-    while ( prev_node != NULL ){
+    while ( prev != NULL && i <=limit){
 
-        printf("%s\t\t%d",prev_node->name, prev_node->marks);
+        printf("%s\t\t%d", prev->name, prev->marks);
         printf("\n");
-        temp = prev_node;
-        prev_node = prev_node->nxtStudPtr;
-        free(temp->name);
-        free(temp);
+        temp = prev;
+        prev = prev->nxtStudPtr;
         i++;
     }
+}
+
+/*******************************************************************************
+ * Function: UpdateLog()
+ * Working: Updates the log file.
+ * Input: File pointer, type of log, message
+ ******************************************************************************/
+ 
+/******************************************************************************/
+int UpdateLog(FILE *log, char *log_type, char *msg){
+/******************************************************************************/
+
+	if(log != NULL){
+	    //printf("Entering into log\n");
+	    time_t now = time(NULL);
+	    
+	    strftime(buff, 20, "%Y-%m-%d %H:%M:%S", localtime(&now));
+	    
+	    fputs(buff, log);
+	    fputs("\t", log);
+	    fputs(log_type, log);
+	    fputs("\t", log);
+	    fputs(msg, log);
+	    
+		strcpy(err_msg, "Log updated\n");
+		return 1;
+	}
+	else{
+		strcpy(err_msg, "\nLog file not found\n");
+		return 0;
+	}
 }
 
 /******************************************************************************/
