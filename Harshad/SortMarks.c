@@ -55,9 +55,9 @@ char *err_msg;
 
 /**************************** Function Declarations ***************************/
 int FileCheck(FILE *);
-int ValidateParam(char *,char *);
+char* TrimWhiteSpace(char *);
+int ValidateParam(char *,int);
 int CreateList(char *, int, StudListType *);
-void SortList(int);
 int PrintList(StudListType *);
 int UpdateLog(FILE *, char *, char *);
 /******************************************************************************/
@@ -67,6 +67,7 @@ int main(int argc, char* argv[]){
     FILE *file_ptr, *log_ptr;   // pointers to file & log respectively.
     char ch;                    // character to be read from file.
     int i;
+    StudListType *current, *temp;
 
     err_msg = (char *) malloc(MAX_SIZE);
     log_ptr = fopen("SORT_MARKS_LOG.txt", "a");
@@ -85,6 +86,7 @@ int main(int argc, char* argv[]){
             }
             else{
                 /* Putting in the log */
+                printf("\n%s\n", err_msg);
                 if ( UpdateLog(log_ptr, "Error", err_msg) ){
                 	printf("\n%s\n", err_msg);
                 	exit(0);
@@ -117,43 +119,94 @@ int main(int argc, char* argv[]){
                     
                 fseek(file_ptr, 0, SEEK_SET);
                 printf("Taking input from file\n");
-                    
-                char *name, *marks;
+                   
+                /* buff is to store the line read from file.
+                 * line points to the trimmed string read from file.
+                 * name stores the name of the student.
+                 * s_marks stores the marks in string.
+                 */
+
+                char *buff, *line, *name, *s_marks;
+                int marks;
                 int count = 0;
-                    
-                printf("Reading input from file\n");
+                size_t len = 0;     // to store the line size read from file
+
+                buff = (char *) malloc(MAX_SIZE);
                 name = (char *) malloc(MAX_SIZE);
+                
+                printf("Reading input from file\n");
 
                 /* Create linked list */
-                while( fscanf(file_ptr, "%s %s", name, marks) != EOF){
-                    printf("Variables read: %s %s\n", name, marks);
-                        
-                    if ( ValidateParam(name, marks) ){
-                        if ( CreateList(name, atoi(marks), head) )
-                            count++;        // node inserted successfully
+
+                while ( getline(&buff, &len, file_ptr) != -1) {
+
+                    line = TrimWhiteSpace(buff);
+                    printf("Line read from file: %s\n", line);
+            
+                    strcpy(name, strsep(&line, " "));
+                
+                    // Checking whether second column of record consists
+                    // of number or not
+                    if ( (s_marks = strsep(&line, "\n")) != NULL ){
+                       
+                        if ( sscanf(s_marks, "%i", &marks) ){
+                            printf("Marks: %d\n",marks);
+                            if ( ValidateParam(name, marks) ){
+                                if ( CreateList(name, marks, head) )
+                                    count++;        // node inserted successfully
+                            }
+                            else{
+                                 /* Putting in the log */
+                                printf("\n%s\n", err_msg);
+                                if ( UpdateLog(log_ptr, "Error", err_msg) ){
+		                           	printf("\n%s\n", err_msg);
+        		               	    exit(0);
+    		                    }
+	    	                    else{
+		                           	printf("\n%s\n", err_msg);
+        	    	               	exit(0);
+		                        }
+                            }
+                        }
+                        else{
+                            printf("Something went wrong\n");
+                            strcpy(err_msg, "Something went wrong");
+                            if ( UpdateLog(log_ptr, "Error", err_msg) ){
+                                printf("\n%s\n", err_msg);
+                                exit(0);
+                            }
+                            else{
+                                 printf("\n%s\n", err_msg);
+                                 exit(0);
+                            }
+                        }
                     }
                     else{
-                        /* Putting in the log */
-                		if ( UpdateLog(log_ptr, "Error", err_msg) ){
-		                	printf("\n%s\n", err_msg);
-		                	exit(0);
-		                }
+                        printf("Marks should be present in record."
+                               " Record present: %s", name);
+                        strcpy(err_msg, "Marks should be present in record.");
+                        strcat(err_msg, " Record present: ");
+                        strcat(err_msg, name);
+                        if ( UpdateLog(log_ptr, "Error", err_msg) ){
+		                    printf("\n%s\n", err_msg);
+		                    exit(0);
+        		        }
 		                else{
-		                	printf("\n%s\n", err_msg);
-		                	exit(0);
-		                }
+		                   	printf("\n%s\n", err_msg);
+		               	    exit(0);
+        		        }
+                        exit(0);
                     }
                 }
+
                 free(name);
-                    
+                free(buff);
+
                 printf("Count: %d\n", count);
-
-                /* Sorting linked list */
-                //SortList(count);
-
             }// end of if
             else{
                 /* Putting in the log */
+                printf("\n%s\n", err_msg);
                 if ( UpdateLog(log_ptr, "Error", err_msg) ){
                 	printf("\n%s\n", err_msg);
                 	exit(0);
@@ -181,10 +234,21 @@ int main(int argc, char* argv[]){
     
     if ( !PrintList(head) )
     	printf("\n%s\n", err_msg);
+    
+    if( head != NULL){
+    	current = head;
+    	while( current != NULL){
+    		temp = current;
+    		current = current->nxtStudPtr;
+    		free(temp->name);
+    		free(temp);
+    	}
+    }		    	
     free(err_msg);
     fclose(log_ptr);
     return 0;
 }
+
 /*
 /******************************************************************************/
 /**                                                                          **/
@@ -223,6 +287,34 @@ int FileCheck(FILE *file_ptr){
             return 0;
     }   
 }
+
+/*******************************************************************************
+ * Function: TrimWhiteSpace(char *)
+ * Working: This function takes as input a string & trim the leading & trailing
+ * white spaces (i.e. tabs & spaces).
+ * Return value: string with leading & trailing white spaces removed.
+ ******************************************************************************/
+
+/******************************************************************************/
+char* TrimWhiteSpace(char *str){
+/******************************************************************************/
+    char *end;
+
+    // Trim leading space
+    while(isspace(*str)) str++;
+
+    if(*str == 0)  // All spaces?
+        return str;
+
+    // Trim trailing space
+    end = str + strlen(str) - 1;
+    while(end > str && isspace(*end)) end--;
+
+    // Write new null terminator
+    *(end+1) = '\0';
+    return str;
+}
+
 /*******************************************************************************
  * Function: ValidateParam()
  * Working: Validates for the parameter read from the file. If parameters are
@@ -232,15 +324,15 @@ int FileCheck(FILE *file_ptr){
  ******************************************************************************/
 
 /******************************************************************************/
-int ValidateParam(char *name, char *marks){
+int ValidateParam(char *name, int marks){
 /******************************************************************************/
 
-    int name_len, i_marks, i = 0;
+    int name_len, i = 0;
     
     name_len = strlen(name);
 
     /* checking whether name consists of only alphabets */
-    while ( i < name_len ){
+    while ( i < name_len){
         if ( isalpha(name[i++]) )
             continue;
         else{
@@ -249,11 +341,13 @@ int ValidateParam(char *name, char *marks){
         }
     }
 
-    /* checking whether marks are only numbers */
-    if ( sscanf(marks, "%i", &i_marks) )
+    /* checking whether marks are within range */
+    if ( 0 <= marks && marks <= 100 ){
+        printf("checking marks\n");
         return 1;
+    }
     else{
-        strcpy(err_msg, "Marks should be in number format");
+        strcpy(err_msg, "Marks should be between 0 to 100");
         return 0;
     }
 }
@@ -271,7 +365,7 @@ int CreateList(char *name, int marks, StudListType *f_head){
     StudListType *node, *prev, *current;
                     
     node = (StudListType *) malloc(sizeof (StudListType));
-    node->name = (char *) malloc(strlen(name));
+    node->name = (char *) malloc(strlen(name) + 1);
     
     strcpy(node->name, name);
     node->marks = marks;
