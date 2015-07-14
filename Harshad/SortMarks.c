@@ -34,7 +34,10 @@
 /******************************************************************************/
 
 #define MAX_SIZE 100
-
+#define ERROR 1
+#define LOG 2
+#define DEBUG 3
+int line_no = 0; 
 /******************************************************************************/
 /**                                                                          **/
 /**                      TYPEDEFS AND STRUCTURES                             **/
@@ -59,18 +62,17 @@ char* TrimWhiteSpace(char *);
 int ValidateParam(char *,int);
 int CreateList(char *, int, StudListType *);
 int PrintList(StudListType *);
-int UpdateLog(FILE *, char *, char *);
+void UpdateLog(int, char *);
 /******************************************************************************/
 
 int main(int argc, char* argv[]){
 
-    FILE *file_ptr, *log_ptr;   // pointers to file & log respectively.
+    FILE *file_ptr;   // pointers to file & log respectively.
     char ch;                    // character to be read from file.
     int i;
     StudListType *current, *temp;
 
     err_msg = (char *) malloc(MAX_SIZE);
-    log_ptr = fopen("SORT_MARKS_LOG.txt", "a");
 
     if (argc == 2){
         // if the argument is to print help for the program
@@ -79,6 +81,7 @@ int main(int argc, char* argv[]){
          
             /* Check whether file is empty or not */
             if ( !FileCheck(file_ptr) ){
+                UpdateLog(DEBUG, "Reading help from file") ;
                 fseek(file_ptr, 0, SEEK_SET);
                 while ((ch = fgetc(file_ptr)) != EOF){
                     printf("%c", ch);
@@ -87,23 +90,16 @@ int main(int argc, char* argv[]){
             else{
                 /* Putting in the log */
                 printf("\n%s\n", err_msg);
-                if ( UpdateLog(log_ptr, "Error", err_msg) ){
-                	printf("\n%s\n", err_msg);
-                	exit(0);
-                }
-                else{
-                	printf("\n%s\n", err_msg);
-                	exit(0);
-                }
+                UpdateLog(ERROR, err_msg);
+                exit(0);
             }
+            UpdateLog(LOG, "Read help from file complete."); 
             fclose(file_ptr);
+            exit(0);
         }
         else{
             printf("Please provide valid options\n");
-            if ( UpdateLog(log_ptr, "Debug", "Please provide valid options") )
-                	printf("\n%s\n", err_msg);
-            else
-            	printf("\n%s\n", err_msg);               	
+            UpdateLog(ERROR, "Please provide valid options"); 
             exit(0);
         }
     }
@@ -137,9 +133,11 @@ int main(int argc, char* argv[]){
                 printf("Reading input from file\n");
 
                 /* Create linked list */
-
+                UpdateLog(LOG, "Creating linked list");
                 while ( getline(&buff, &len, file_ptr) != -1) {
 
+                    UpdateLog(DEBUG, "Trimming white spaces from file line");
+                    
                     line = TrimWhiteSpace(buff);
                     printf("Line read from file: %s\n", line);
             
@@ -151,34 +149,25 @@ int main(int argc, char* argv[]){
                        
                         if ( sscanf(s_marks, "%i", &marks) ){
                             printf("Marks: %d\n",marks);
+                            
+                            UpdateLog(DEBUG, "Validating Parameters");
+                            
                             if ( ValidateParam(name, marks) ){
+                                UpdateLog(DEBUG, "Adding node to the list");
+                                
                                 if ( CreateList(name, marks, head) )
                                     count++;        // node inserted successfully
                             }
                             else{
                                  /* Putting in the log */
                                 printf("\n%s\n", err_msg);
-                                if ( UpdateLog(log_ptr, "Error", err_msg) ){
-		                           	printf("\n%s\n", err_msg);
-        		               	    exit(0);
-    		                    }
-	    	                    else{
-		                           	printf("\n%s\n", err_msg);
-        	    	               	exit(0);
-		                        }
+                                UpdateLog(ERROR, err_msg);
                             }
                         }
                         else{
                             printf("Something went wrong\n");
                             strcpy(err_msg, "Something went wrong");
-                            if ( UpdateLog(log_ptr, "Error", err_msg) ){
-                                printf("\n%s\n", err_msg);
-                                exit(0);
-                            }
-                            else{
-                                 printf("\n%s\n", err_msg);
-                                 exit(0);
-                            }
+                            UpdateLog(ERROR, err_msg); 
                         }
                     }
                     else{
@@ -187,15 +176,7 @@ int main(int argc, char* argv[]){
                         strcpy(err_msg, "Marks should be present in record.");
                         strcat(err_msg, " Record present: ");
                         strcat(err_msg, name);
-                        if ( UpdateLog(log_ptr, "Error", err_msg) ){
-		                    printf("\n%s\n", err_msg);
-		                    exit(0);
-        		        }
-		                else{
-		                   	printf("\n%s\n", err_msg);
-		               	    exit(0);
-        		        }
-                        exit(0);
+                        UpdateLog(ERROR, err_msg);
                     }
                 }
 
@@ -207,24 +188,13 @@ int main(int argc, char* argv[]){
             else{
                 /* Putting in the log */
                 printf("\n%s\n", err_msg);
-                if ( UpdateLog(log_ptr, "Error", err_msg) ){
-                	printf("\n%s\n", err_msg);
-                	exit(0);
-                }
-                else{
-                	printf("\n%s\n", err_msg);
-                	exit(0);
-                }
+                UpdateLog(ERROR, err_msg);
             }
         }// end of if
         else{
         	printf("\n%s not a valid option\n", argv[1]);
-        	strcpy(argv[1], "not a valid option");
-        	if ( UpdateLog(log_ptr, "Debug",  argv[1]) )
-                printf("\n%s\n", err_msg);
-            else
-            	printf("\n%s\n", err_msg);  
-        	exit(0);
+        	strcpy(argv[1], " not a valid option");
+        	UpdateLog(DEBUG,  argv[1]);
         }
     }// end of if
 	else{
@@ -234,7 +204,11 @@ int main(int argc, char* argv[]){
     
     if ( !PrintList(head) )
     	printf("\n%s\n", err_msg);
+    else
+       UpdateLog(LOG, "Printing sorted linked list");
     
+    UpdateLog(LOG, "Freeing the linked list memory");
+
     if( head != NULL){
     	current = head;
     	while( current != NULL){
@@ -245,7 +219,6 @@ int main(int argc, char* argv[]){
     	}
     }		    	
     free(err_msg);
-    fclose(log_ptr);
     return 0;
 }
 
@@ -454,30 +427,72 @@ int PrintList(StudListType *f_head){
  ******************************************************************************/
  
 /******************************************************************************/
-int UpdateLog(FILE *log, char *log_type, char *msg){
+void UpdateLog(int log_type, char *msg){
 /******************************************************************************/
 
-    char buff[20];              // temporary buffer to store date
-	if(log != NULL){
-	    //printf("Entering into log\n");
-	    time_t now = time(NULL);
+    line_no++;      // incrementing record number 
+    FILE *log;
+    // buff is temporary buffer to store date
+    char buff[20], chr, n_string[3];        
+    int f_size ;
+
+    log = fopen("SORT_MARKS_LOG.txt", "a+");
+
+
+    if ( !fseek(log, 0, SEEK_END) ){
+        f_size = ftell(log);
+
+        if ( f_size == 0){
+            fputs("\tId\t|\tTimestamp\t\t|\tType\t|\tMessage\n", log);
+            fputs("-------------------------------------------------------"
+                    "---------------------------------------------\n", log);
+        }
+
+        fseek(log, 0, SEEK_SET);
+        chr = fgetc(log);
+            
+        if ( log != NULL ){
+            time_t now = time(NULL);
 	    
-	    strftime(buff, 20, "%Y-%m-%d %H:%M:%S", localtime(&now));
+            strftime(buff, 20, "%Y-%m-%d %H:%M:%S", localtime(&now));
+    	    snprintf(n_string, 12, "%d", line_no);
+            fputs("\t", log);
+            fputs(n_string, log);
+            fputs("\t|", log);
+            fputs("\t", log);
+            fputs(buff, log);
+        	fputs("\t|", log);
+	        
+            switch(log_type){
+                case 1:
+                    fputs("\t", log);
+    	            fputs("ERROR", log);
+            		break;
+
+                case 2:
+                    fputs("\t", log);
+                    fputs("LOG", log);
+                    break;
+                case 3:
+                    fputs("\t", log);
+                    fputs("DEBUG", log);
+                    break;
+            }
+        
+            fputs("\t|", log);
+            fputs("\t", log);
+            fputs(msg, log);
+            fputs("\n", log);
+            fputs("-------------------------------------------------------"
+                "-------------------------------------------\n", log);
 	    
-	    fputs(buff, log);
-	    fputs("\t", log);
-	    fputs(log_type, log);
-	    fputs("\t", log);
-	    fputs(msg, log);
-	    fputs("\n", log);
-	    
-		strcpy(err_msg, "Log updated");
-		return 1;
-	}
-	else{
-		strcpy(err_msg, "Log file not found");
-		return 0;
-	}
+            strcpy(err_msg, "Log updated");
+	    }
+    	else{
+	    	strcpy(err_msg, "Log file not found");
+	    }
+        fclose(log);
+    }
 }
 
 /******************************************************************************/
