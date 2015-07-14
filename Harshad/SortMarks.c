@@ -37,6 +37,7 @@
 #define ERROR 1
 #define LOG 2
 #define DEBUG 3
+
 int line_no = 0; 
 /******************************************************************************/
 /**                                                                          **/
@@ -113,7 +114,6 @@ int main(int argc, char* argv[]){
             /*Start reading from file */
             if ( !FileCheck(file_ptr) ){
                     
-                fseek(file_ptr, 0, SEEK_SET);
                 printf("Taking input from file\n");
                    
                 /* buff is to store the line read from file.
@@ -256,8 +256,10 @@ int FileCheck(FILE *file_ptr){
             strcpy(err_msg, "File is empty");
             return 1;
         }
-        else
+        else{
+            fseek(file_ptr, 0, SEEK_SET);
             return 0;
+        }
     }   
 }
 

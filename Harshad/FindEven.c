@@ -37,15 +37,24 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <time.h>
 /******************************************************************************/
 
 #define MAX_SIZE 100
+#define ERROR 1
+#define LOG 2
+#define DEBUG 3
 
-char *msg = NULL;
+int line_no = 0;
+char *err_msg = NULL;
 
 /************************* Function Declarations ******************************/
-  void FindEven(char *, char *);
-  int ValidateParam(char *, char *);
+int FileCheck(FILE *);
+char *TrimWhiteSpace(char *);
+void FindEven(char *, char *);
+int ValidateParam(char *, char *);
+void UpdateLog(int, char *);
+void FreeMemory(char *, char *, char *);
 /******************************************************************************/
 
 /******************************************************************************/
@@ -69,14 +78,14 @@ int main(int argc, char *argv[]){
         exit(0);
     }
 
-    msg = (char *)malloc(MAX_SIZE);
+    err_msg = (char *)malloc(MAX_SIZE);
     
-    if ( msg == NULL ){
+    if ( err_msg == NULL ){
         printf("Memory to message isn't allocated\n");
         exit(0);
     }
     
-    strcpy(msg, "Default message\n");
+    strcpy(err_msg, "Default message\n");
 
 	printf("\nThis program is to print n-consecutive even numbers,"
                             " given the certain number\n");
@@ -87,91 +96,214 @@ int main(int argc, char *argv[]){
         
         if (strcmp(argv[1], "--help") == 0){
 
-            file_ptr = fopen("FINDEVEN_README.txt", "r"); //read from file
+            file_ptr = fopen("../text-files/FINDEVEN_README.txt", "r"); //read from file
        
-            fseek(file_ptr, 0, SEEK_END);
-            int f_size = ftell(file_ptr);
-            
-            if ( f_size == 0){
-                printf("File is empty\n");
-                exit(0);
-            }
-            else{
-                fseek(file_ptr, 0, SEEK_SET);
+            if( !FileCheck(file_ptr) ){
+                UpdateLog(DEBUG, "Reading help from file");
                 while ((ch = fgetc(file_ptr)) != EOF){
                     printf("%c", ch);
                 }
+            UpdateLog(LOG, "Read help from file");
             }
-        
+            else{
+                printf("%s\n", err_msg);
+                UpdateLog(ERROR, err_msg);
+            }
             fclose(file_ptr);
+            exit(0);
         }
-        return 1;
+        else{
+            printf("Please provide valid option\n");
+            UpdateLog(ERROR, "Valid option not provided");
+            exit(0);
+        }
     }
 
-    else if (argc == 3){
+    else if ( argc == 3 ){
 
         // if input is passed through file which is a command line argument
 
-        if (strcmp(argv[1], "-f") == 0){
+        if ( strcmp(argv[1], "-f") == 0 ){
 
             printf("\nEntered file name: %s\n", argv[2]);
             file_ptr = fopen(argv[2], "r");
-            int f_size;
-            if(file_ptr != NULL){
-                fseek(file_ptr, 0, SEEK_END);
-                f_size = ftell(file_ptr);
-                if ( f_size == 0){
-                    printf("File is empty.\n");
-                    exit(0);
-                }
-                else{
-//                  printf("File Size: %d\n", f_size);
-                    fseek(file_ptr, 0, SEEK_SET);
-                    while( fscanf(file_ptr,"%s %s", str_ptr1, str_ptr2) != EOF ){
-                        if ( ValidateParam(str_ptr1, str_ptr2) )
-                            FindEven(str_ptr1, str_ptr2);
-                        else
-                            printf("%s", msg);
+            
+            if ( !FileCheck(file_ptr) ){
+                printf("Taking input from file\n");
+                   
+                /* buff is to store the line read from file.
+                 * line points to the trimmed string read from file.
+                 * name stores the name of the student.
+                 * s_marks stores the marks in string.
+                 */
+
+                char *buff, *line, *name, *s_nos;
+                int marks;
+                int count = 0;
+                size_t len = 0;     // to store the line size read from file
+
+                buff = (char *) malloc(MAX_SIZE);
+                name = (char *) malloc(MAX_SIZE);
+                
+                printf("Reading input from file\n");
+                UpdateLog(DEBUG, "Reading input from file");
+
+                while ( getline(&buff, &len, file_ptr) != -1) {
+
+                    UpdateLog(DEBUG, "Trimming white spaces from file line");
+                    
+                    line = TrimWhiteSpace(buff);
+                    printf("Line read from file: %s\n", line);
+            
+                    // Checking whether record consists of number or not
+                    if ( (s_nos = strsep(&line, " ")) != NULL )
+                        strcpy(str_ptr1, s_nos);
+                    else{
+                        UpdateLog(ERROR, "Record is invalid");
+                        strcpy(err_msg, "Record is invalid");
+                        printf("%s\n", err_msg);
+                        FreeMemory(str_ptr1, str_ptr2, err_msg);
+                        exit(0);
+                    }
+                    if ( (s_nos = strsep(&line, "\n")) != NULL )
+                        strcpy(str_ptr2, s_nos);
+                    else{
+                        UpdateLog(ERROR, "Record is invalid");
+                        strcpy(err_msg, "Record is invalid");
+                        printf("%s\n", err_msg);
+                        FreeMemory(str_ptr1, str_ptr2, err_msg);
+                        exit(0);
+                    }
+                       
+                    UpdateLog(DEBUG, "Validating Parameters");
+                                                
+                    if ( ValidateParam(str_ptr1, str_ptr2) ){
+                        UpdateLog(DEBUG, "Finding even numbers");
+                        FindEven(str_ptr1, str_ptr2);
+                    }
+                    else{
+                        printf("%s\n", err_msg);
+                        UpdateLog(ERROR, err_msg);
+                        FreeMemory(str_ptr1, str_ptr2, err_msg);
+                        exit(0);
                     }
                 }
                 fclose(file_ptr);
+                FreeMemory(str_ptr1, str_ptr2, err_msg);
                 return 1;
             }
             else{
-                printf("\nFile can't be opened\n");
-                return 0;
+                printf("\n%s\n", err_msg);
+                UpdateLog(ERROR, err_msg);
+                FreeMemory(str_ptr1, str_ptr2, err_msg);
+                exit(0);
             }
         }
         // numbers are passed as command line argument
         else{
-                strcpy(str_ptr1, argv[1]);
-                strcpy(str_ptr2, argv[2]);
+            UpdateLog(DEBUG, "Scanning input from command line arguments");
+            strcpy(str_ptr1, argv[1]);
+            strcpy(str_ptr2, argv[2]);
         }
     }
 
     // numbers have to be read from standard input
     else if(argc == 1){
-
+                
+        UpdateLog(DEBUG, "Scanning input from standard input");
         printf("\nPlease enter the number you want to start from:\n");
         scanf("%s", str_ptr1);
     
         printf("\nPlease enter how many numbers you want to see:\n");
         scanf("%s", str_ptr2);
     }
+
+    else{
+        printf("Please enter valid arguments");
+        UpdateLog(ERROR, "Valid arguments not provided");
+        FreeMemory(str_ptr1, str_ptr2, err_msg);
+        exit(0);
+    }
     
-    if ( ValidateParam(str_ptr1, str_ptr2) )
+   
+    UpdateLog(DEBUG, "Validating arguments");
+    if ( ValidateParam(str_ptr1, str_ptr2) ){
+        UpdateLog(DEBUG, "Finding even numbers");
         FindEven(str_ptr1, str_ptr2);
-    else
-        printf("%s", msg);
-    free(str_ptr1);
-    free(str_ptr2);
-    free(msg);
+    }
+    else{
+        printf("%s\n", err_msg);
+        UpdateLog(ERROR, err_msg);
+    }
+    FreeMemory(str_ptr1, str_ptr2, err_msg);
+  
 }
 
 /*****************************************************************************/
 /**                             LOCAL FUNCTIONS                             **/
 /**                                                                         **/
 /*****************************************************************************/
+
+/*******************************************************************************
+ * Function: FileCheck()
+ * Working: This function checks whether mentioned file exists or not & if
+ * exists whether it's empty or not.
+ * Input: function takes as input file pointer & returns the result whether file
+ * can be used or not.
+ * Return value: 1 or 0.
+ ******************************************************************************/
+
+/******************************************************************************/
+int FileCheck(FILE *file_ptr){
+/******************************************************************************/
+
+    if ( file_ptr == NULL){
+        strcpy(err_msg, "File doesn't exists");
+        return 1;
+    }
+    else{    
+        fseek(file_ptr, 0, SEEK_END);
+
+        int f_size = ftell(file_ptr);
+
+        /* print error message */
+        if ( f_size == 0){
+            strcpy(err_msg, "File is empty");
+            return 1;
+        }
+        else{
+            fseek(file_ptr, 0, SEEK_SET);
+            return 0;
+        }
+    }   
+}
+
+/*******************************************************************************
+ * Function: TrimWhiteSpace(char *)
+ * Working: This function takes as input a string & trim the leading & trailing
+ * white spaces (i.e. tabs & spaces).
+ * Return value: string with leading & trailing white spaces removed.
+ ******************************************************************************/
+
+/******************************************************************************/
+char* TrimWhiteSpace(char *str){
+/******************************************************************************/
+    char *end;
+
+    // Trim leading space
+    while(isspace(*str)) str++;
+
+    if(*str == 0)  // All spaces?
+        return str;
+
+    // Trim trailing space
+    end = str + strlen(str) - 1;
+    while(end > str && isspace(*end)) end--;
+
+    // Write new null terminator
+    *(end+1) = '\0';
+    return str;
+}
 
 /******************************************************************************
  * Function: ValidateParam(char *, char *)
@@ -199,7 +331,7 @@ int ValidateParam(char *str_ptr1, char * str_ptr2){
         if ( -size < num && limit < size ){
             if ( 0 < limit && limit < size ){
                 if ( ( num + limit * 2 ) < num ){
-                    strcpy(msg, "Given range is too wide\n");
+                    strcpy(err_msg, "Given range is too wide\n");
                     return 0;
                 }
                 else{
@@ -207,17 +339,17 @@ int ValidateParam(char *str_ptr1, char * str_ptr2){
                 }
             }
             else{
-                strcpy(msg, "Given count exceeds limit\n");
+                strcpy(err_msg, "Given count exceeds limit\n");
                 return 0;
             }
         }
         else{
-            strcpy(msg, "Given number exceeds limit\n");
+            strcpy(err_msg, "Given number exceeds limit\n");
             return 0;
         }
     }
     else{
-        strcpy(msg, "\nPlease give numbers\n");
+        strcpy(err_msg, "Please give input as integer numbers");
         return 0;
     }
 }
@@ -256,10 +388,101 @@ void FindEven(char *str_ptr1, char * str_ptr2){
     printf("\n");
 }
 
+/*******************************************************************************
+ * Function: UpdateLog()
+ * Working: Updates the log file.
+ * Input: Type of log, message
+ ******************************************************************************/
+ 
+/******************************************************************************/
+void UpdateLog(int log_type, char *msg){
+/******************************************************************************/
+
+    line_no++;      // incrementing record number 
+    FILE *log;
+    // buff is temporary buffer to store date
+    char buff[20], chr, n_string[3];        
+    int f_size ;
+
+    log = fopen("FIND_EVEN_LOG.txt", "a+");
+
+
+    if ( !fseek(log, 0, SEEK_END) ){
+        f_size = ftell(log);
+
+        if ( f_size == 0){
+            fputs("\tId\t|\tTimestamp\t\t|\tType\t|\tMessage\n", log);
+            fputs("-------------------------------------------------------"
+                    "---------------------------------------------\n", log);
+        }
+
+        fseek(log, 0, SEEK_SET);
+        chr = fgetc(log);
+            
+        if ( log != NULL ){
+            if ( line_no == 1 )
+                fputs("========================================================"
+                       "==============================================\n", log);
+            time_t now = time(NULL);
+	    
+            strftime(buff, 20, "%Y-%m-%d %H:%M:%S", localtime(&now));
+    	    snprintf(n_string, 12, "%d", line_no);
+            fputs("\t", log);
+            fputs(n_string, log);
+            fputs("\t|", log);
+            fputs("\t", log);
+            fputs(buff, log);
+        	fputs("\t|", log);
+	        
+            switch(log_type){
+                case 1:
+                    fputs("\t", log);
+    	            fputs("ERROR", log);
+            		break;
+
+                case 2:
+                    fputs("\t", log);
+                    fputs("LOG", log);
+                    break;
+                case 3:
+                    fputs("\t", log);
+                    fputs("DEBUG", log);
+                    break;
+            }
+        
+            fputs("\t|", log);
+            fputs("\t", log);
+            fputs(msg, log);
+            fputs("\n", log);
+            fputs("-------------------------------------------------------"
+                "-------------------------------------------\n", log);
+	    
+            strcpy(err_msg, "Log updated");
+	    }
+    	else{
+	    	strcpy(err_msg, "Log file not found");
+	    }
+        fclose(log);
+    }
+}
+
+/*******************************************************************************
+ * Function: FreeMemory()
+ * Working: Frees allocated memory to parameters.
+ * Input: two numbers & one error message
+ ******************************************************************************/
+
+/******************************************************************************/
+void FreeMemory(char *str1, char *str2, char *msg){
+/******************************************************************************/
+    UpdateLog(LOG, "Freeing memory");
+    free(str1);
+    free(str2);
+    free(msg);
+}
+
 /******************************************************************************/
 /**                                                                          **/
 /**                                 EOF                                      **/
 /**                                                                          **/
 /******************************************************************************/
-
-
