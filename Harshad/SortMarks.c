@@ -1,14 +1,14 @@
 /*------------------------------------------------------------------------------
  * File: SortMarks.c
- * Author: Harshd
+ * Author: Harshad
  * Date: 02-Jul-2015
  *
  * COPYRIGHT: (C) 2015 - All rights reserved - Network Marvels (I) Pvt. Ltd.,
  * Thane (India)
  *-----------------------------------------------------------------------------
  * Description: Program to find top-n scorers in the class.
- * The program reads input from the file, where input is stored in the form of
- * (stud_name marks) & prints top-n scorers.
+ * The program reads input only from the file, where input is stored in the
+ * & prints top-n scorers.
  * Program also has an option to show the help to the user by taking command
  * line argument '--help'.
  *------------------------------------------------------------------------------
@@ -37,8 +37,9 @@
 #define ERROR 1
 #define LOG 2
 #define DEBUG 3
+#define SUCCESS 1
+#define FAILURE 0
 
-int line_no = 0; 
 /******************************************************************************/
 /**                                                                          **/
 /**                      TYPEDEFS AND STRUCTURES                             **/
@@ -55,6 +56,7 @@ typedef struct StudListType StudListType;
 
 /**************************** Global Declarations *****************************/
 char *err_msg;
+int list_count = 0, line_no = 0; 
 /******************************************************************************/
 
 /**************************** Function Declarations ***************************/
@@ -81,7 +83,7 @@ int main(int argc, char* argv[]){
             file_ptr = fopen("../text-files/SORTMARKS_README.txt", "r"); //read from file
          
             /* Check whether file is empty or not */
-            if ( !FileCheck(file_ptr) ){
+            if ( FileCheck(file_ptr) ){
                 UpdateLog(DEBUG, "Reading help from file") ;
                 fseek(file_ptr, 0, SEEK_SET);
                 while ((ch = fgetc(file_ptr)) != EOF){
@@ -92,16 +94,16 @@ int main(int argc, char* argv[]){
                 /* Putting in the log */
                 printf("\n%s\n", err_msg);
                 UpdateLog(ERROR, err_msg);
-                exit(0);
+                exit(-1);
             }
             UpdateLog(LOG, "Read help from file complete."); 
             fclose(file_ptr);
-            exit(0);
+            exit(-1);
         }
         else{
             printf("Please provide valid options\n");
             UpdateLog(ERROR, "Please provide valid options"); 
-            exit(0);
+            exit(-1);
         }
     }
 
@@ -112,7 +114,7 @@ int main(int argc, char* argv[]){
             file_ptr = fopen(argv[2], "r");
             
             /*Start reading from file */
-            if ( !FileCheck(file_ptr) ){
+            if ( FileCheck(file_ptr) ){
                     
                 printf("Taking input from file\n");
                    
@@ -124,7 +126,6 @@ int main(int argc, char* argv[]){
 
                 char *buff, *line, *name, *s_marks;
                 int marks;
-                int count = 0;
                 size_t len = 0;     // to store the line size read from file
 
                 buff = (char *) malloc(MAX_SIZE);
@@ -156,7 +157,7 @@ int main(int argc, char* argv[]){
                                 UpdateLog(DEBUG, "Adding node to the list");
                                 
                                 if ( CreateList(name, marks, head) )
-                                    count++;        // node inserted successfully
+                                    list_count++;        // node inserted successfully
                             }
                             else{
                                  /* Putting in the log */
@@ -165,8 +166,8 @@ int main(int argc, char* argv[]){
                             }
                         }
                         else{
-                            printf("Something went wrong\n");
-                            strcpy(err_msg, "Something went wrong");
+                            printf("Marks should be in numbers\n");
+                            strcpy(err_msg, "Marks should be in numbers");
                             UpdateLog(ERROR, err_msg); 
                         }
                     }
@@ -183,7 +184,7 @@ int main(int argc, char* argv[]){
                 free(name);
                 free(buff);
 
-                printf("Count: %d\n", count);
+                printf("Count: %d\n", list_count);
             }// end of if
             else{
                 /* Putting in the log */
@@ -199,13 +200,15 @@ int main(int argc, char* argv[]){
     }// end of if
 	else{
 		printf("Valid arguments not provided. Type '--help' option to see help\n");
-		exit(0);
+		exit(-1);
 	}
     
-    if ( !PrintList(head) )
+    if ( !PrintList(head) ){
     	printf("\n%s\n", err_msg);
+        UpdateLog(ERROR, err_msg);
+    }
     else
-       UpdateLog(LOG, "Printing sorted linked list");
+       UpdateLog(LOG, "Printed sorted linked list");
     
     UpdateLog(LOG, "Freeing the linked list memory");
 
@@ -219,7 +222,7 @@ int main(int argc, char* argv[]){
     	}
     }		    	
     free(err_msg);
-    return 0;
+    
 }
 
 /*
@@ -244,7 +247,7 @@ int FileCheck(FILE *file_ptr){
 
     if ( file_ptr == NULL){
         strcpy(err_msg, "File doesn't exists");
-        return 1;
+        return FAILURE;
     }
     else{    
         fseek(file_ptr, 0, SEEK_END);
@@ -254,11 +257,11 @@ int FileCheck(FILE *file_ptr){
         /* print error message */
         if ( f_size == 0){
             strcpy(err_msg, "File is empty");
-            return 1;
+            return FAILURE;
         }
         else{
             fseek(file_ptr, 0, SEEK_SET);
-            return 0;
+            return SUCCESS;
         }
     }   
 }
@@ -312,18 +315,18 @@ int ValidateParam(char *name, int marks){
             continue;
         else{
             strcpy(err_msg, "Name is not in right format");
-            return 0;
+            return FAILURE;
         }
     }
 
     /* checking whether marks are within range */
     if ( 0 <= marks && marks <= 100 ){
         printf("checking marks\n");
-        return 1;
+        return SUCCESS;
     }
     else{
         strcpy(err_msg, "Marks should be between 0 to 100");
-        return 0;
+        return FAILURE;
     }
 }
 
@@ -357,11 +360,11 @@ int CreateList(char *name, int marks, StudListType *f_head){
                 
                 if ( current == f_head ){
                     head = node;
-                    return 1;
+                    return SUCCESS;
                 }
                 else{
                     prev->nxtStudPtr = node;
-                    return 1;
+                    return SUCCESS;
                 }
             }
             else{
@@ -371,14 +374,14 @@ int CreateList(char *name, int marks, StudListType *f_head){
         }
         if ( current == NULL ){
             prev->nxtStudPtr = node;
-            return 1;
+            return SUCCESS;
         }
     }
     else{
         head = node;
-        return 1;
+        return SUCCESS;
     }
-    return 0;
+    return FAILURE;
 }
 
 /*******************************************************************************
@@ -391,6 +394,7 @@ int PrintList(StudListType *f_head){
 /******************************************************************************/
 
     int limit, i = 1;
+    char *no;
     StudListType *prev, *temp;
     
     /* printing sorted linked list */
@@ -398,27 +402,40 @@ int PrintList(StudListType *f_head){
     
 	    printf("Printing linked list\n");
 	    
+        no = (char *) malloc(MAX_SIZE);
 	    printf("\nHow many toppers you want to see:\n");
-	    scanf("%d", &limit);
+	    scanf("%s", no);
+        if ( !sscanf(no, "%i", &limit) ){
+            strcpy(err_msg, "Count was not in number format");
+            free(no);
+            return FAILURE;
+        }
 	
-	    prev = f_head;
+    if ( limit > 0 && limit <= list_count ){
+            prev = f_head;
 	
-	    printf("Name\t\tMarks\n");
-	    printf("----\t\t-----\n");
+    	    printf("Name\t\tMarks\n");
+	        printf("----\t\t-----\n");
 	    
-	    while ( prev != NULL && i <=limit){
+	        while ( prev != NULL && i <=limit){
 	
-	        printf("%s\t\t%d", prev->name, prev->marks);
-	        printf("\n");
-	        temp = prev;
-	        prev = prev->nxtStudPtr;
-	        i++;
-	    }
-	    return 1;
+	            printf("%s\t\t%d", prev->name, prev->marks);
+    	        printf("\n");
+	            temp = prev;
+	            prev = prev->nxtStudPtr;
+	            i++;
+    	    }
+            free(no);
+	        return SUCCESS;
+        }
+        else{
+            strcpy(err_msg, "Range is out of bound.");
+            return FAILURE;
+        }
 	}
 	else{
 		strcpy(err_msg, "List is empty");
-		return 0;
+		return FAILURE;
 	}
 }
 
