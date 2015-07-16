@@ -65,30 +65,30 @@ int main(int argc, char *argv[]){
     FILE *file_ptr;
         
     str_ptr1 = (char *)malloc(sizeof(char) * MAX_SIZE );
-    
+  
     if ( str_ptr1 == NULL ){
-        printf("Memory to string pointer isn't allocated\n");
+        //printf("Memory to string pointer isn't allocated\n");
         exit(0);
     }
 
     str_ptr2 = (char *)malloc(sizeof(char) * MAX_SIZE);
     
     if ( str_ptr2 == NULL ){
-        printf("Memory to string pointer 2 isn't allocated\n");
+        //printf("Memory to string pointer 2 isn't allocated\n");
         exit(0);
     }
 
     err_msg = (char *)malloc(MAX_SIZE);
     
     if ( err_msg == NULL ){
-        printf("Memory to message isn't allocated\n");
+        //printf("Memory to message isn't allocated\n");
         exit(0);
     }
     
     strcpy(err_msg, "Default message\n");
 
-	printf("\nThis program is to print n-consecutive even numbers,"
-                            " given the certain number\n");
+	//printf("\nThis program is to print n-consecutive even numbers,"
+    //                        " given the certain number\n");
 
     if (argc == 2){
 
@@ -125,11 +125,11 @@ int main(int argc, char *argv[]){
 
         if ( strcmp(argv[1], "-f") == 0 ){
 
-            printf("\nEntered file name: %s\n", argv[2]);
+            //printf("\nEntered file name: %s\n", argv[2]);
             file_ptr = fopen(argv[2], "r");
             
             if ( !FileCheck(file_ptr) ){
-                printf("Taking input from file\n");
+                //printf("Taking input from file\n");
                    
                 /* buff is to store the line read from file.
                  * line points to the trimmed string read from file.
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]){
                 buff = (char *) malloc(MAX_SIZE);
                 name = (char *) malloc(MAX_SIZE);
                 
-                printf("Reading input from file\n");
+                //printf("Reading input from file\n");
                 UpdateLog(DEBUG, "Reading input from file");
 
                 while ( getline(&buff, &len, file_ptr) != -1) {
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]){
                     UpdateLog(DEBUG, "Trimming white spaces from file line");
                     
                     line = TrimWhiteSpace(buff);
-                    printf("Line read from file: %s\n", line);
+                    //printf("Line read from file: %s\n", line);
             
                     // Checking whether record consists of number or not
                     if ( (s_nos = strsep(&line, " ")) != NULL )
@@ -368,15 +368,15 @@ void FindEven(char *str_ptr1, char * str_ptr2){
 /******************************************************************************/    
     int i, num, limit;
 
-    if ( sscanf(str_ptr1, "%i", &num) && sscanf(str_ptr2, "%i", &limit) ){
+    if ( sscanf(str_ptr1, "%i", &num) && sscanf(str_ptr2, "%i", &limit) )
         printf("Numbers successfully scanned\n");
-    }
+        
     else
         printf("Numbers couldn't be scanned\n");
 
-    printf("%d even number(s) after number %d are:", limit, num);
+    //printf("%d even number(s) after number %d are:", limit, num);
         
-    if (num % 2 == 0)
+    if ( num % 2 == 0 )
         num += 2;
     else
         num++;
