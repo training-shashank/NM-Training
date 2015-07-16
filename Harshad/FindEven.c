@@ -368,24 +368,27 @@ void FindEven(char *str_ptr1, char * str_ptr2){
 /******************************************************************************/    
     int i, num, limit;
 
-    if ( sscanf(str_ptr1, "%i", &num) && sscanf(str_ptr2, "%i", &limit) )
-        printf("Numbers successfully scanned\n");
+    if ( sscanf(str_ptr1, "%i", &num) && sscanf(str_ptr2, "%i", &limit) ){
+        //printf("Numbers successfully scanned\n");
+        UpdateLog(DEBUG, "Numbers successfully scanned");
+        if ( num % 2 == 0 )
+            num += 2;
+        else
+            num++;
+            
+        for (i = 0; i < limit; i++){
+            printf("%d\n", num);
+            num += 2;
+        }
+        printf("\n");
+    }
         
     else
-        printf("Numbers couldn't be scanned\n");
+        UpdateLog(ERROR, "Numbers couldn't be scanned");
+        //printf("Numbers couldn't be scanned\n");
 
     //printf("%d even number(s) after number %d are:", limit, num);
         
-    if ( num % 2 == 0 )
-        num += 2;
-    else
-        num++;
-        
-    for (i = 0; i < limit; i++){
-        printf("\n%d", num);
-        num += 2;
-    }
-    printf("\n");
 }
 
 /*******************************************************************************
@@ -404,7 +407,7 @@ void UpdateLog(int log_type, char *msg){
     char buff[20], chr, n_string[3];        
     int f_size ;
 
-    log = fopen("FIND_EVEN_LOG.txt", "a+");
+    log = fopen("/home/harshad/dump/text-files/FIND_EVEN_LOG.txt", "a+");
 
 
     if ( !fseek(log, 0, SEEK_END) ){
