@@ -15,16 +15,9 @@
 #
 # Following tags are supported:
 # ------------------------------------------------------------------------------
-# OTP_SIZE - size of OTP
-# PUBLIC_TOKEN_ID - public token id used to access the secret on server
-# SECRET - base 64 secret used to generage HOTP
-# MOVING_FACTOR - initial sequence number for a given token id
-# MAX_FAILED_ATTEMPTS - no. of failed attempts tolerated
-# UNBLOCK  - Unblock <public_token_id> and reset no_of_failed_attempts
-# AUTH_WINDOW  - Set look ahead window size
-# SLEEP - Halts the process for the mentioned duration of time
-# ASSIGN_TOKEN - assigns <public_token_id> from grsoath_tokens from grsoathdb
-# to <user> from ykmap database
+# NUMBER - offset number
+# RANGE - range of even numbers
+# OUTPUT - expected output
 #
 # CAUTION:
 # ------------------------------------------------------------------------------
@@ -33,82 +26,153 @@
 # -bility to enter data in the sequence (s)he decides
 #-------------------------------------------------------------------------------
 
-use strict;
+#------------------------------Modules------------------------------------------
+use strict;                                                                     
 use warnings;
+#use diagnostics;
+#-------------------------------------------------------------------------------
 
-open my $test_data, "<", "/home/harshad/dump/text-files/find_test.txt" or 
-    die "Can't open data file $!";
-open my $test_log, ">", "/home/harshad/dump/test-scripts/find_test_log.txt" or
-    die "Can't open log file $!";
+#-----------------------------I/O Files-----------------------------------------
+open my $test_data, "+<", "/home/harshad/dump/text-files/find_test.txt" or      
+    die "Can't open data file $!";                                             
+open my $test_log, "+>>", "/home/harshad/dump/test-scripts/find_test_log.txt" or 
+    die "Can't open log file $!";                                              
+#-------------------------------------------------------------------------------
 
+#--------------------------Global Declarations----------------------------------
 my $number1 = 0;
 my $number2 = 0;
-my $log_id = 0;
+my $log_rec_no = 0;
+#-------------------------------------------------------------------------------
     
+#--------------------------Global Declarations----------------------------------
+#sub validate_output (@, @);
+#sub update_test_log (@, @, $);
+#-------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------
+ # Sub-routine: validate_output
+ # Working: This routine checks whether actual output is equal to the expected
+ #          output.
+ # Input: Actual & expected output.
+#-------------------------------------------------------------------------------
+
+sub validate_output {
+
+    print "In validate\n";
+    my $flag = 0;
+
+    my @c_output = @{$_[0]};
+    my @words = @{$_[1]};
+    my $arr_size = @c_output;
+
+    foreach my $i (@c_output){
+        print "output: $i\n";
+    }
+    print "Actual output: @c_output\n";
+    print "Expected output: @words\n";
+    print "Array size: $arr_size\n";
+    my $words_size = @words;
+    print "Words size: $words_size\n";
+
+    # both array should contain same number of elements
+    if ( $arr_size == $words_size ){
+        
+        print "same length\n";   
+        # checking for array elements
+        for ( my $i = 0; $i < @words; $i++ ){
+            print "c_output[$i]: $c_output[$i]\n";
+            print "words[$i]: $words[$i]\n";
+            if ( $c_output[$i] == $words[$i] ){
+                $flag = 1;
+                next ;
+            }
+            else{
+                $flag = 0;
+                last ;
+            }
+        }
+
+        # if all array elements are equal
+        if ( $flag == 1 ){
+            print "case successful\n\n";
+            update_test_log(\@c_output, \@words, "Passed");
+        }
+        else{
+            print "case unsuccessful\n\n";
+            update_test_log(\@c_output, \@words, "Failed");
+        }
+    }
+    else{
+        print "case unsuccessful\n\n";
+        update_test_log(\@c_output, \@words, "Failed");
+    }           
+}
+
+#-------------------------------------------------------------------------------
+ # Sub-routine: update_test_log
+ # Working: This routine updates the log for testing.
+ # Input: Actual output, expected output and test result.
+#-------------------------------------------------------------------------------
+
+sub update_test_log{
+    
+    print "In update\n";
+    
+    my @c_output = @{$_[0]};
+    my @words = @{$_[1]};
+    $log_rec_no++;
+
+    my $result = $_[2];
+
+    print "Writing to log...\n";
+    if ( !-s $test_log ){
+        print $test_log "\tId\t|\tTimestamp\t\t|\tExpected output\t\t|".
+                        "\tActual output\t\t|\tTest Result\n";
+        print $test_log "----------------------------------------------------".
+          "------------------------------------------------------------------".
+          "----------------------------------------------------------------\n";
+    }
+
+    my $time = localtime();
+    print $test_log "\t$log_rec_no\t|\t$time\t|\t@words\t|".
+                    "\t@c_output\t|\t$result\t\n";
+    print $test_log "----------------------------------------------------".
+      "------------------------------------------------------------------".
+      "----------------------------------------------------------------\n";
+
+}
+
 foreach my $line ( <$test_data> ){
 
-#    printf "\nIn while\n";
+    # store line read from the test cases file
     my @words = split ' ', $line;
     
+    # ignore comments in script file
     if ( $words[0] eq '#' ){
         next ;
     }
-    elsif ( $words[0] eq "NUMBER1" ){
+
+    # scan for the number
+    elsif ( $words[0] eq "NUMBER" ){
         $number1 = $words[1];
         next;
     }
-    elsif ( $words[0] eq "NUMBER2" ){
+
+    # scan for the range
+    elsif ( $words[0] eq "RANGE" ){
         $number2 = $words[1];
         next;
     }
 
-    else{        
-        my $result = `FindEven.out 1 3`;
-        print "Result:\t$result\n";
-        my @result = split /\n/, $result;
-        print "Splitted result: @result";
-        print "File line:\t@words\n";
-#       =begin comment
-#       my $flag = 0;
-#       for ( my $i = 0; $i < @words; $i++ ){
-#            if ( $words[$i] eq $result[$i] ){
-#                $flag = 1;
-#                next ;
-#            }
-#            else{
-#                  $log_id++;
-#                if ( $log_id == 1 ){
-#                    print $test_log "\tId\t|\tTimestamp\t\t|\tentry\n";
-#                    print $test_log "------------------------------------------",
-#                       "---------------------------------------------------\n";
-#               }
-#               print $test_log "NUMBER1:\t", $number1, "\nNUMBER2:\t", $number2,
-#                                "\n";
-#               print $test_log "\t", $log_id, "\t|", "\t", localtime(),
-#                                "\t|", "\t", "Test Failed\n";
-#               $flag = 0;
-#               last ;
-#            }
-#       }
-#
-#       if ( $flag == 1){
-#           $log_id++;
-#            if ( $log_id == 1 ){
-#                print $test_log "\tId\t|\tTimestamp\t\t|\tentry\n";
-#                print $test_log "------------------------------------------",
-#                     "---------------------------------------------------\n";
-#            }
-#            print $test_log "NUMBER1:\t", $number1, "\nNUMBER2:\t", $number2,
-#                            "\n";
-#            print $test_log "\t", $log_id, "\t|", "\t", localtime(),
-#                            "\t|", "\t", "Test Passed\n";
-#       }
-#       =end comment
-#       =cut
+    else{ 
+        # store output of the program in array       
+        my @c_output = split /\n/, `FindEven.out $number1 $number2`;
+        
+        # print "Actual output:\t@c_output\n";
+        
+     #   print "Expected output:\t@words\n";
+        
+        validate_output(\@c_output, \@words) ;
     }
 }
- 
-print "Closing files\n";
- 
-close $test_data;
-close $test_log;
