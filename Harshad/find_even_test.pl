@@ -18,6 +18,7 @@
 # NUMBER - offset number
 # RANGE - range of even numbers
 # OUTPUT - expected output
+# ERROR_OUTPUT - The error message expected by program.
 #
 # CAUTION:
 # ------------------------------------------------------------------------------
@@ -64,6 +65,8 @@ sub validate_output {
 
     my @c_output = @{$_[0]};
     my @words = @{$_[1]};
+    my $op_format = $_[2];
+
     my $arr_size = @c_output;
 
     foreach my $i (@c_output){
@@ -83,13 +86,29 @@ sub validate_output {
         for ( my $i = 0; $i < @words; $i++ ){
             print "c_output[$i]: $c_output[$i]\n";
             print "words[$i]: $words[$i]\n";
-            if ( $c_output[$i] == $words[$i] ){
-                $flag = 1;
-                next ;
+            
+            # compare string output
+            if ( $op_format ){
+                if ( $c_output[$i] eq $words[$i] ){
+                    $flag = 1;
+                    next ;
+                }
+                else{
+                    $flag = 0;
+                    last ;
+                }
             }
+
+            # compare numeric output
             else{
-                $flag = 0;
-                last ;
+                if ( $c_output[$i] == $words[$i] ){
+                    $flag = 1;
+                    next ;
+                }
+                else{
+                    $flag = 0;
+                    last ;
+                }
             }
         }
 
@@ -126,6 +145,10 @@ sub update_test_log{
     my $result = $_[2];
 
     print "Writing to log...\n";
+    
+    # check if file is empty with -s
+    # returns the size of file
+
     if ( !-s $test_log ){
         print $test_log "\tId\t|\tTimestamp\t\t|\tExpected output\t\t|".
                         "\tActual output\t\t|\tTest Result\n";
@@ -135,12 +158,20 @@ sub update_test_log{
     }
 
     my $time = localtime();
+
+    # to distinguish between different runs
+    if ( $log_rec_no == 1 ){
+        print $test_log "=====================================================".
+          "===================================================================".
+          "=================================================================\n";
+    }     
+
     print $test_log "\t$log_rec_no\t|\t$time\t|\t@words\t|".
                     "\t@c_output\t|\t$result\t\n";
+        
     print $test_log "----------------------------------------------------".
-      "------------------------------------------------------------------".
-      "----------------------------------------------------------------\n";
-
+          "------------------------------------------------------------------".
+          "----------------------------------------------------------------\n";
 }
 
 foreach my $line ( <$test_data> ){
@@ -168,11 +199,18 @@ foreach my $line ( <$test_data> ){
     else{ 
         # store output of the program in array       
         my @c_output = split /\n/, `FindEven.out $number1 $number2`;
+        my $op_format = 0;
         
-        # print "Actual output:\t@c_output\n";
+        if ( $words[0] eq "ERROR_OUTPUT" ){
+            @c_output = split / /, $c_output[0];
+            @words = @words[1 .. $#words];
+            $op_format = 1;      # for the string output flag the condition
+        }
+
+        print "Actual output:\t@c_output\n";
         
-     #   print "Expected output:\t@words\n";
+        print "Expected output:\t@words\n";
         
-        validate_output(\@c_output, \@words) ;
+        validate_output(\@c_output, \@words, $op_format) ;
     }
 }
