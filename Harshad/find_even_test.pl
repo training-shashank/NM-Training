@@ -34,7 +34,7 @@ use warnings;
 #-------------------------------------------------------------------------------
 
 #-----------------------------I/O Files-----------------------------------------
-open my $test_data, "+<", "/home/harshad/dump/text-files/find_test.txt" or      
+open my $test_data, "+<", "/home/harshad/dump/text-files/find_test_cases.txt" or
     die "Can't open data file $!";                                             
 open my $test_log, "+>>", "/home/harshad/dump/test-scripts/find_test_log.txt" or 
     die "Can't open log file $!";                                              
@@ -67,25 +67,22 @@ sub validate_output {
     my @words = @{$_[1]};
     my $op_format = $_[2];
 
-    my $arr_size = @c_output;
 
-    foreach my $i (@c_output){
-        print "output: $i\n";
-    }
     print "Actual output: @c_output\n";
     print "Expected output: @words\n";
-    print "Array size: $arr_size\n";
+
+    my $arr_size = @c_output;
     my $words_size = @words;
-    print "Words size: $words_size\n";
 
     # both array should contain same number of elements
     if ( $arr_size == $words_size ){
         
         print "same length\n";   
+
         # checking for array elements
         for ( my $i = 0; $i < @words; $i++ ){
-            print "c_output[$i]: $c_output[$i]\n";
-            print "words[$i]: $words[$i]\n";
+            # print "c_output[$i]: $c_output[$i]\n";
+            # print "words[$i]: $words[$i]\n";
             
             # compare string output
             if ( $op_format ){
