@@ -33,19 +33,18 @@
 #include <time.h>
 /******************************************************************************/
 
+/******************************** MACROS **************************************/
 #define MAX_SIZE 100
 #define ERROR 1
 #define LOG 2
 #define DEBUG 3
 #define SUCCESS 1
 #define FAILURE 0
-
-/******************************************************************************/
-/**                                                                          **/
-/**                      TYPEDEFS AND STRUCTURES                             **/
-/**                                                                          **/
+#define HELP_FILE "../text-files/SORTMARKS_README.txt"
+#define LOG_FILE "SORT_MARKS_LOG.txt"
 /******************************************************************************/
 
+/************************ TYPEDEFS AND STRUCTURES *****************************/
 struct StudListType{
     int marks;
     char *name;
@@ -53,13 +52,14 @@ struct StudListType{
 } *head = NULL, *prev_node;
 
 typedef struct StudListType StudListType;
-
-/**************************** Global Declarations *****************************/
-char *err_msg;
-int list_count = 0, line_no = 0; 
 /******************************************************************************/
 
-/**************************** Function Declarations ***************************/
+/**************************** GLOBAL DECLARATIONS *****************************/
+char *err_msg, *no = NULL;
+int list_count = 0, line_no = 0;
+/******************************************************************************/
+
+/**************************** FUNCTION DECLARATIONS ***************************/
 int FileCheck(FILE *);
 char* TrimWhiteSpace(char *);
 int ValidateParam(char *,int);
@@ -76,11 +76,12 @@ int main(int argc, char* argv[]){
     StudListType *current, *temp;
 
     err_msg = (char *) malloc(MAX_SIZE);
+    strcpy(err_msg, "NO ERROR");
 
     if (argc == 2){
         // if the argument is to print help for the program
         if (strcmp(argv[1], "--help") == 0){
-            file_ptr = fopen("../text-files/SORTMARKS_README.txt", "r"); //read from file
+            file_ptr = fopen(HELP_FILE, "r"); //read from file
          
             /* Check whether file is empty or not */
             if ( FileCheck(file_ptr) ){
@@ -93,7 +94,7 @@ int main(int argc, char* argv[]){
             else{
                 /* Putting in the log */
                 printf("\n%s\n", err_msg);
-                UpdateLog(ERROR, err_msg);
+                UpdateLog(ERROR, strcat(err_msg, "Exiting program"));
                 exit(-1);
             }
             UpdateLog(LOG, "Read help from file complete."); 
@@ -102,12 +103,12 @@ int main(int argc, char* argv[]){
         }
         else{
             printf("Please provide valid options\n");
-            UpdateLog(ERROR, "Please provide valid options"); 
+            UpdateLog(ERROR, "Valid options not provided. Exiting program."); 
             exit(-1);
         }
     }
 
-    if (argc == 3){
+    if (argc >= 3){
 
         /* Read input from file */
         if ( strcmp(argv[1], "-f") == 0){
@@ -144,8 +145,8 @@ int main(int argc, char* argv[]){
             
                     strcpy(name, strsep(&line, " "));
                 
-                    // Checking whether second column of record consists
-                    // of number or not
+                    // if second column of record consists
+                    // of number
                     if ( (s_marks = strsep(&line, "\n")) != NULL ){
                        
                         if ( sscanf(s_marks, "%i", &marks) ){
@@ -162,13 +163,13 @@ int main(int argc, char* argv[]){
                             else{
                                  /* Putting in the log */
                                 printf("\n%s\n", err_msg);
-                                UpdateLog(ERROR, err_msg);
+                                UpdateLog(ERROR, strcat(err_msg, ". Ignoring record."));
                             }
                         }
                         else{
                             printf("Marks should be in numbers\n");
                             strcpy(err_msg, "Marks should be in numbers");
-                            UpdateLog(ERROR, err_msg); 
+                            UpdateLog(ERROR, strcat(err_msg, ". Ignoring record"));
                         }
                     }
                     else{
@@ -177,9 +178,10 @@ int main(int argc, char* argv[]){
                         strcpy(err_msg, "Marks should be present in record.");
                         strcat(err_msg, " Record present: ");
                         strcat(err_msg, name);
-                        UpdateLog(ERROR, err_msg);
+                        UpdateLog(ERROR, strcat(err_msg, ". Ignoring record"));
                     }
                 }
+
 
                 free(name);
                 free(buff);
@@ -203,6 +205,9 @@ int main(int argc, char* argv[]){
 		exit(-1);
 	}
     
+    if ( argc == 4 )
+        no = argv[3];
+
     if ( !PrintList(head) ){
     	printf("\n%s\n", err_msg);
         UpdateLog(ERROR, err_msg);
@@ -393,21 +398,31 @@ int CreateList(char *name, int marks, StudListType *f_head){
 int PrintList(StudListType *f_head){
 /******************************************************************************/
 
-    int limit, i = 1;
-    char *no;
+    int i = 1, limit;
     StudListType *prev, *temp;
+    char *no_tmp = NULL;
     
     /* printing sorted linked list */
     if ( f_head != NULL ){
     
 	    printf("Printing linked list\n");
 	    
-        no = (char *) malloc(MAX_SIZE);
-	    printf("\nHow many toppers you want to see:\n");
-	    scanf("%s", no);
+	    if ( no == NULL ){
+            if ( (no = (char *) malloc(MAX_SIZE)) == NULL ){
+                strcpy(err_msg, "Memory couldn't be allocated to "
+                        "number of toppers variable");
+                return FAILURE;
+            }
+            else{
+                no_tmp = no;
+            }
+            printf("\nHow many toppers you want to see:\n");
+    	    scanf("%s", no);
+        }
         if ( !sscanf(no, "%i", &limit) ){
             strcpy(err_msg, "Count was not in number format");
-            free(no);
+            if ( no_tmp != NULL )
+                free(no_tmp);
             return FAILURE;
         }
 	
@@ -425,7 +440,8 @@ int PrintList(StudListType *f_head){
 	            prev = prev->nxtStudPtr;
 	            i++;
     	    }
-            free(no);
+            if ( no_tmp != NULL )
+                free(no_tmp);
 	        return SUCCESS;
         }
         else{
@@ -455,7 +471,7 @@ void UpdateLog(int log_type, char *msg){
     char buff[20], chr, n_string[3];        
     int f_size ;
 
-    log = fopen("SORT_MARKS_LOG.txt", "a+");
+    log = fopen(LOG_FILE, "a+");
 
 
     if ( !fseek(log, 0, SEEK_END) ){
@@ -504,11 +520,9 @@ void UpdateLog(int log_type, char *msg){
             fputs("\n", log);
             fputs("-------------------------------------------------------"
                 "-------------------------------------------\n", log);
-	    
-            strcpy(err_msg, "Log updated");
 	    }
     	else{
-	    	strcpy(err_msg, "Log file not found");
+	    	printf("Log file not found\n");
 	    }
         fclose(log);
     }
