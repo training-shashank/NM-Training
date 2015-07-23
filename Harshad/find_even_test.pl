@@ -1,3 +1,4 @@
+#!/usr/bin/env perl
 # COPYRIGHT: (C) 2015 - All rights reserved - Network Marvels (I) Pvt. Ltd.,
 # Thane (India)
 #-------------------------------------------------------------------------------
@@ -44,6 +45,9 @@ open my $test_log, "+>>", "/home/harshad/dump/test-scripts/find_test_log.txt" or
 my $number1 = 0;
 my $number2 = 0;
 my $log_rec_no = 0;
+my $no_test_cases = 0;
+my $test_failed = 0;
+my $test_passed = 0;
 #-------------------------------------------------------------------------------
     
 #--------------------------Global Declarations----------------------------------
@@ -113,15 +117,18 @@ sub validate_output {
         if ( $flag == 1 ){
             print "case successful\n\n";
             update_test_log(\@c_output, \@words, "Passed");
+            ++$test_passed;
         }
         else{
             print "case unsuccessful\n\n";
             update_test_log(\@c_output, \@words, "Failed");
+            ++$test_failed;
         }
     }
     else{
         print "case unsuccessful\n\n";
         update_test_log(\@c_output, \@words, "Failed");
+        ++$test_failed;
     }           
 }
 
@@ -171,6 +178,7 @@ sub update_test_log{
           "----------------------------------------------------------------\n";
 }
 
+
 foreach my $line ( <$test_data> ){
 
     # store line read from the test cases file
@@ -209,5 +217,18 @@ foreach my $line ( <$test_data> ){
         print "Expected output:\t@words\n";
         
         validate_output(\@c_output, \@words, $op_format) ;
+        ++$no_test_cases;
     }
 }
+print "Total test cases executed: $no_test_cases\nTest failed: $test_failed\n".
+            "Test passed: $test_passed\n";
+
+print $test_log "#############################################################".
+                "###########################################################\n";
+
+print $test_log "Total test cases performed: $no_test_cases\n";
+print $test_log "Test cases passed: $test_passed\n";
+print $test_log "Test cases failed: $test_failed\n";
+
+print $test_log "#############################################################".
+                "###########################################################\n";
