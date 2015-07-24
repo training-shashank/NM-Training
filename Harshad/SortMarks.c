@@ -56,6 +56,7 @@ typedef struct StudListType StudListType;
 
 /**************************** GLOBAL DECLARATIONS *****************************/
 char *err_msg, *no = NULL;
+char const DELIM[2] = " ";
 int list_count = 0, line_no = 0;
 /******************************************************************************/
 
@@ -112,7 +113,7 @@ int main(int argc, char* argv[]){
 
         /* Read input from file */
         if ( strcmp(argv[1], "-f") == 0){
-            file_ptr = fopen(argv[2], "r");
+            file_ptr = fopen(argv[2], "r+");
             
             /*Start reading from file */
             if ( FileCheck(file_ptr) ){
@@ -125,12 +126,13 @@ int main(int argc, char* argv[]){
                  * s_marks stores the marks in string.
                  */
 
-                char *buff, *line, *name, *s_marks;
+                char *temp, *buff, *line, *name, *s_marks;
                 int marks;
                 size_t len = 0;     // to store the line size read from file
 
                 buff = (char *) malloc(MAX_SIZE);
                 name = (char *) malloc(MAX_SIZE);
+                temp = (char *) malloc(MAX_SIZE);
                 
                 printf("Reading input from file\n");
 
@@ -138,47 +140,47 @@ int main(int argc, char* argv[]){
                 UpdateLog(LOG, "Creating linked list");
                 while ( getline(&buff, &len, file_ptr) != -1) {
 
+                    strcpy(name, "");
+                    marks = -1;
+                  //  strcpy(temp, "");
                     UpdateLog(DEBUG, "Trimming white spaces from file line");
                     
                     line = TrimWhiteSpace(buff);
                     printf("Line read from file: %s\n", line);
             
-                    strcpy(name, strsep(&line, " "));
-                
-                    // if second column of record consists
-                    // of number
-                    if ( (s_marks = strsep(&line, "\n")) != NULL ){
-                       
-                        if ( sscanf(s_marks, "%i", &marks) ){
-                            printf("Marks: %d\n",marks);
-                            
-                            UpdateLog(DEBUG, "Validating Parameters");
-                            
-                            if ( ValidateParam(name, marks) ){
-                                UpdateLog(DEBUG, "Adding node to the list");
-                                
-                                if ( CreateList(name, marks, head) )
-                                    list_count++;        // node inserted successfully
-                            }
-                            else{
-                                 /* Putting in the log */
-                                printf("\n%s\n", err_msg);
-                                UpdateLog(ERROR, strcat(err_msg, ". Ignoring record."));
-                            }
-                        }
-                        else{
-                            printf("Marks should be in numbers\n");
-                            strcpy(err_msg, "Marks should be in numbers");
-                            UpdateLog(ERROR, strcat(err_msg, ". Ignoring record"));
-                        }
+                    // strcpy(name, strsep(&line, " "));
+                    
+                    temp = strtok(line, DELIM);
+                   // printf("temp: %s\n", temp);
+
+                    while ( temp != NULL ){
+                        strcat(name, temp);
+                        strcat(name, " ");
+                       // printf("name: %s\n",name);
+                        temp = strtok(NULL, DELIM);
+                        if (temp == NULL )
+                            break;
+                       // printf("temp in while: %s\n", temp);
+                        if ( sscanf(temp, "%i", &marks) )
+                            break;
+                    }
+                    
+                    strcpy(name, TrimWhiteSpace(name));
+                    
+                   // printf("Marks: %d\n",marks);
+                        
+                    UpdateLog(DEBUG, "Validating Parameters");
+                        
+                    if ( ValidateParam(name, marks) ){
+                        UpdateLog(DEBUG, "Adding node to the list");
+                        
+                        if ( CreateList(name, marks, head) )
+                            list_count++;        // node inserted successfully
                     }
                     else{
-                        printf("Marks should be present in record."
-                               " Record present: %s", name);
-                        strcpy(err_msg, "Marks should be present in record.");
-                        strcat(err_msg, " Record present: ");
-                        strcat(err_msg, name);
-                        UpdateLog(ERROR, strcat(err_msg, ". Ignoring record"));
+                         /* Putting in the log */
+                        printf("\n%s\n", err_msg);
+                        UpdateLog(ERROR, strcat(err_msg, ". Ignoring record."));
                     }
                 }
 
@@ -316,8 +318,10 @@ int ValidateParam(char *name, int marks){
 
     /* checking whether name consists of only alphabets */
     while ( i < name_len){
-        if ( isalpha(name[i++]) )
+        if ( isalpha(name[i]) || isspace(name[i]) || name[i] == '.'){
+            i++;
             continue;
+        }
         else{
             strcpy(err_msg, "Name is not in right format");
             return FAILURE;
